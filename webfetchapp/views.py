@@ -155,35 +155,69 @@ def export_to_csv_fb(request_id):
 def get_fb_data(from_date,to_date,keyword):
 	#pdb.set_trace()
 	request_id = uuid.uuid4()
-	try:
-		page_id = keyword
-		access_token = "854568807915975|Vzdlg3iLBXkJGvN6t326Zf-rc54"
+	#try:
+	page_id = keyword
+	access_token = "854568807915975|Vzdlg3iLBXkJGvN6t326Zf-rc54"
 
-		graph = GraphAPI(access_token)
-		page_date = graph.get(page_id)
-		#page_date=str(page_date["founded"])
-		data= graph.get(page_id+'/posts', since=from_date,untill=to_date,page=True, retry=5)#data 
-		count = 0
-		
-		for post in data:
-		    for p in post['data']:
-		      for key in p:
-		        if 'message' in key:
-		        	fb_obj = facebook_data(
-		        		request_id = request_id,
-						fb_post_id = p['id'],
-						fb_post_message = p['message'],
-						fb_post_from = p['from']['name'],
-						#fb_post_share_count =
-						#fb_post_like_count =
-						#fb_post_comment_count =
-						fb_post_created_date = p['created_time']
-		        		)
-		        	fb_obj.save()
-		    count += 1
-		return count,request_id
-	except Exception,e:
-		return 0,request_id
+	graph = GraphAPI(access_token)
+	page_date = graph.get(page_id)
+	#page_date=str(page_date["founded"])
+	data= graph.get(page_id+'/posts', since=from_date,untill=to_date,page=True, retry=5)#data 
+	count = 0
+	
+	for post in data:
+	    for p in post['data']:
+	      #print "post===============",p
+	      for key in p:
+	      	#print "key=====",key
+	        if 'message' in key:
+				fb_obj = facebook_data(
+					request_id = request_id,
+					fb_post_id = p['id'],
+					fb_post_message = p['message'],
+					fb_post_from = p['from']['name'],
+					#fb_post_share_count =
+					#fb_post_like_count =
+					#fb_post_comment_count =
+					fb_post_created_date = p['created_time']
+					)
+				fb_obj.save()
+				comment_count = get_fb_comments(p['id'],graph)
+				#print "fb_obj=====",fb_obj
+				fb_obj.fb_post_comment_count = comment_count
+				fb_obj.save()    
+
+	      count += 1
+	return count,request_id
+	# except Exception,e:
+	# 	return 0,request_id
+
+def get_fb_comments(post_id,graph):
+	comment_count =0
+	query = post_id+"?comments.limit(1000){created_time,message,id,from}"
+	comment_request = graph.get(query,paginate=True)
+	if 'comments' in comment_request.keys():
+		if 'data' in comment_request['comments'].keys():
+			for data in comment_request['comments']['data']:
+				if 'from' in data.keys():
+					comments_by = data['from']['name']
+				if 'created_time' in data.keys():comment_created_date = data['created_time']
+				if 'message' in data.keys():
+					comment_message = data['message']
+
+				fb_comment_obj = facebook_comments(
+				comment_id = data['id'],
+				fb_post_id = post_id,
+				comment_message = comment_message,
+				#commment_like = ,
+				comment_created_by = comments_by,
+				comment_created_date=comment_created_date
+					)
+				fb_comment_obj.save()
+				comment_count+=1
+          	#print comment_count
+    	return comment_count
+
 	
 def show_post(request):
 	#pdb.set_trace()

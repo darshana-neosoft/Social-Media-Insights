@@ -24,7 +24,7 @@ class twitter_data(models.Model):
 class facebook_data(models.Model):
 	facebook_id = models.AutoField(primary_key =True)
 	request_id = models.CharField(max_length = 300)
-	fb_post_id = models.CharField(max_length = 300)
+	fb_post_id = models.CharField(max_length = 200)
 	fb_post_message = models.TextField(max_length = 5000)
 	fb_post_from = models.CharField(max_length=300)
 	fb_post_share_count = models.CharField(max_length = 300)
@@ -44,3 +44,12 @@ class youtube_data(models.Model):
 	video_share_count = models.CharField(max_length=300)
 	video_created_date = models.CharField(max_length =300)
 
+
+class facebook_comments(models.Model):
+	fb_comment_id = models.AutoField(primary_key = True)
+	comment_id = models.CharField(max_length = 300)
+	fb_post_id = models.CharField(max_length = 500)
+	comment_message = models.CharField(max_length=5000)
+	commment_like = models.CharField(max_length = 300)
+	comment_created_by = models.CharField(max_length = 500)
+	comment_created_date = models.CharField(max_length = 500)
