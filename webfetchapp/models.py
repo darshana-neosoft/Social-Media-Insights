@@ -53,3 +53,12 @@ class facebook_comments(models.Model):
 	commment_like = models.CharField(max_length = 300)
 	comment_created_by = models.CharField(max_length = 500)
 	comment_created_date = models.CharField(max_length = 500)
+
+class youtube_comments(models.Model):
+	youtube_comment_id = models.AutoField(primary_key = True)
+	comment_id = models.CharField(max_length = 300)
+	youtube_vedio_id = models.CharField(max_length = 500)
+	comment_message = models.CharField(max_length=5000)
+	commment_like = models.CharField(max_length = 300)
+	comment_created_by = models.CharField(max_length = 500)
+	comment_created_date = models.CharField(max_length = 500)

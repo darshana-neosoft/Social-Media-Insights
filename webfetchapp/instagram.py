@@ -23,10 +23,12 @@ def get_comment_threads(youtube, video_id):
 	  ).execute()
 	  if results["items"]:
 		  for item in results["items"]:
-		  	#print "item============",item
+		  	print "item============",item["snippet"]["topLevelComment"]
 		  	comment = item["snippet"]["topLevelComment"]
 		  	author = comment["snippet"]["authorDisplayName"]
 		  	text = comment["snippet"]["textDisplay"]
+        publishedAt = comment["snippet"]["publishedAt"]
+        
 		  	print "Comment by %s: %s" % (author, text)
 		  return results["items"]
 
