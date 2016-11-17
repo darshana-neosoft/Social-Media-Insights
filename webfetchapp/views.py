@@ -317,6 +317,7 @@ def show_video(request):
 	vedio_title_list =[]
 	posts = youtube_data.objects.filter(request_id = request_id)
 	for post in posts:
+		vedio_comment_list =[]
 		vedio_id = post.vedio_id
 		video_title = post.video_title
 		video_description = post.video_description
@@ -326,6 +327,11 @@ def show_video(request):
 		title_list = {'tweets_text':video_title,'twitter_user':video_posted_by,
 		'tweet_created_date':video_created_date}
 		vedio_title_list.append(title_list)
+		youtube_comment = youtube_comments.objects.filter(youtube_vedio_id =vedio_id)
+		for comment in youtube_comment:
+			print "Comments=============",comment
+			#comment_obj = {}
+
 		data= {'success':'true','tweet_list':vedio_title_list,'request_id':request_id,'media':'Youtube'}
 	return render(request,'show_data.html',data)
 
