@@ -111,7 +111,24 @@ def export_to_csv(request):
 	elif media == "Facebook":
 		response = export_to_csv_fb(request_id)
 		return response
+	elif media =="Youtube":
+		response = export_to_csv_youtube(request_id)
+		return response		
 
+def export_to_csv_youtube(request_id):
+	videos = youtube_data.objects.filter(request_id = request_id)
+	response=HttpResponse(content_type='text/csv')
+	response['content-Disposition']='attachment; filename ="youtube_data.csv"'
+	try:
+		writer = csv.writer(response)
+		row=['vedio_id','vedio_title','video_description','vedio_comment_count','youtube_user','vedio_created_date']
+		writer.writerow(row)
+		for video in videos:
+			row = [video.vedio_id,video.video_title,video.video_description,video.video_comments_count,video.video_posted_by,video.video_created_date]
+			writer.writerow(row)
+		return response
+	except Exception, e:
+		return response
 
 def export_to_csv_twitter(request_id):
 	#pdb.set_trace()
@@ -166,20 +183,16 @@ def get_fb_data(from_date,to_date,keyword):
 	count = 0
 	
 	for post in data:
-	    for p in post['data']:
+		for p in post['data']:
 	      #print "post===============",p
-	      for key in p:
-	      	#print "key=====",key
-	      	if 'shares' in key:
-	      		share_count  = p['shares']['count']
-	      	else:
-	      		share_count = "NA"
+			for key in p:
+				#print "key=====",key
+				if 'shares' in key:
+					share_count  = p['shares']['count']
 
-	        if 'message' in key:
-	        	fb_message = p['message']
-	        else:
-	        	fb_message ="NA"
-
+				if 'message' in key:
+					fb_message = str(p['message'].encode('ascii','ignore'))
+					
 			fb_obj = facebook_data(
 			request_id = request_id,
 			fb_post_id = p['id'],
@@ -196,7 +209,7 @@ def get_fb_data(from_date,to_date,keyword):
 			fb_obj.fb_post_comment_count = comment_count
 			fb_obj.save()    
 
-	      count += 1
+	      	count += 1
 	return count,request_id
 	# except Exception,e:
 	# 	return 0,request_id
@@ -262,53 +275,58 @@ def get_youtube_data(from_date,to_date,keyword):
 	    	part="id,snippet",
 	    	maxResults=50
 	    	).execute()
+
 		request_id = uuid.uuid4()
 		count=0
 		for search_result in search_response.get("items", []):
-			
 			if search_result["id"]["kind"] == "youtube#video":
 				count =count+1
 				youtube_obj = youtube_data(
 	    			request_id = request_id,
 	    			vedio_id = search_result["id"]["videoId"],
 	    			video_title = str(search_result['snippet']['title'].encode('ascii', 'ignore')),
+	    			video_url = 'https://www.youtube.com/watch?v='+str(search_result["id"]["videoId"]),
 	    			video_description =  str(search_result['snippet']['description'].encode('ascii', 'ignore')),
-	    			video_posted_by = search_result['snippet']['channelTitle'],
+	    			video_posted_by = str(search_result['snippet']['channelTitle'].encode('ascii', 'ignore')),
 	    			video_created_date = search_result['snippet']['publishedAt']
 	    			)
 	    		youtube_obj.save()
 	    		video_comment_threads = get_youtube_comment(youtube, search_result["id"]["videoId"])
-
+	    		youtube_obj.video_comments_count = video_comment_threads
+	    		youtube_obj.save()
+	    	print "count============",count
 	    	return count, request_id
 	except HttpError, e:
 		return 0, request_id
 
 
 def get_youtube_comment(youtube, video_id):
-  try:
-	  results = youtube.commentThreads().list(
-	    part="snippet",
-	    videoId=video_id,
-	    textFormat="plainText"
-	  ).execute()
-	  if results["items"]:
-		  for item in results["items"]:
-		  	#print "item===========",comment["snippet"]["textDisplay"]
-		  	comment = item["snippet"]["topLevelComment"]
-		  	youtube_comment_obj = youtube_comments(
-		  	comment_id = comment["id"],
-			youtube_vedio_id = video_id,
-			comment_message = str(comment["snippet"]["textDisplay"]),
-			commment_like = comment["snippet"]["likeCount"],
-			comment_created_by = comment["snippet"]["authorDisplayName"],
-			comment_created_date = comment["snippet"]["publishedAt"]
-		  		)
-		  	youtube_comment_obj.save()
-
-		  	#print "Comment by %s: %s" % (author, text)
-		  return results["items"]
-  except Exception,e:
-  	  pass
+	#print "inside get_youtube_comment"
+	try:
+		count =0
+		results = youtube.commentThreads().list(
+		part="snippet",
+		videoId=video_id,
+		textFormat="plainText"
+		).execute()
+		if results["items"]:
+			for item in results["items"]:
+				#print "item===========",comment["snippet"]["textDisplay"]
+				count =count+1
+				comment = item["snippet"]["topLevelComment"]
+				youtube_comment_obj = youtube_comments(
+				comment_id = comment["id"],
+				youtube_vedio_id = video_id,
+				comment_message = str(comment["snippet"]["textDisplay"].encode("ascii","ignore")),
+				commment_like = comment["snippet"]["likeCount"],
+				comment_created_by = str(comment["snippet"]["authorDisplayName"].encode("ascii","ignore")),
+				comment_created_date = comment["snippet"]["publishedAt"]
+					)
+				youtube_comment_obj.save()
+				#print "Comment by %s: %s" % (author, text)
+		return count
+	except Exception,e:
+		return 0
 
 
 def show_video(request):
@@ -323,15 +341,27 @@ def show_video(request):
 		video_description = post.video_description
 		video_posted_by = post.video_posted_by
 		video_created_date = post.video_created_date
-
+		video_url = post.video_url
 		title_list = {'tweets_text':video_title,'twitter_user':video_posted_by,
-		'tweet_created_date':video_created_date}
+		'tweet_created_date':video_created_date,'vedio_id':vedio_id,'vedio_url':video_url}
 		vedio_title_list.append(title_list)
 		youtube_comment = youtube_comments.objects.filter(youtube_vedio_id =vedio_id)
-		for comment in youtube_comment:
-			print "Comments=============",comment
-			#comment_obj = {}
+	
+	data= {'success':'true','tweet_list':vedio_title_list,'request_id':request_id,'media':'Youtube'}
+	return render(request,'show_youtube_data.html',data)
 
-		data= {'success':'true','tweet_list':vedio_title_list,'request_id':request_id,'media':'Youtube'}
-	return render(request,'show_data.html',data)
 
+def show_youtube_comments(request):
+	vedio_id = request.GET.get("vedio_id")
+	comments_list=[]
+	comment_objs = youtube_comments.objects.filter(youtube_vedio_id = vedio_id)
+	for comment_obj in comment_objs:
+		comments = {'comment_id':comment_obj.comment_id,
+				'youtube_vedio_id':	comment_obj.youtube_vedio_id,
+				'comment_message':comment_obj.comment_message,
+				'commment_like':comment_obj.commment_like,
+				'comment_created_by':comment_obj.comment_created_by,
+				'comment_created_date':comment_obj.comment_created_date}
+		comments_list.append(comments)
+	data = {'success':'true','comments_list':comments_list}
+	return render(request,'show_comments.html',data)

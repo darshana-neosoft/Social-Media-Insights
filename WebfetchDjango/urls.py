@@ -26,5 +26,6 @@ urlpatterns = [
     url(r'show-tweets/','webfetchapp.views.show_tweets'),
     url(r'export-to-csv/','webfetchapp.views.export_to_csv'),
     url(r'show-post/','webfetchapp.views.show_post'),
-    url(r'show-video/','webfetchapp.views.show_video')
+    url(r'show-video/','webfetchapp.views.show_video'),
+    url(r'show-youtube-comment/','webfetchapp.views.show_youtube_comments'),
 ]

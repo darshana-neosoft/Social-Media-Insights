@@ -39,9 +39,11 @@ class youtube_data(models.Model):
 	vedio_id = models.CharField(max_length = 300)
 	video_title = models.CharField(max_length = 5000)
 	video_description = models.CharField(max_length = 5000)
+	video_url = models.CharField(max_length = 4000)
 	video_posted_by = models.CharField(max_length = 1000)
 	video_like_count = models.CharField(max_length=300)
 	video_share_count = models.CharField(max_length=300)
+	video_comments_count = models.CharField(max_length=300)
 	video_created_date = models.CharField(max_length =300)
 
 
