@@ -28,4 +28,8 @@ urlpatterns = [
     url(r'show-post/','webfetchapp.views.show_post'),
     url(r'show-video/','webfetchapp.views.show_video'),
     url(r'show-youtube-comment/','webfetchapp.views.show_youtube_comments'),
+    url(r'^$','webfetchapp.views.show_login_page'),
+    url(r'signup-page/','webfetchapp.views.signup_page'),
+    url(r'user-signup/','webfetchapp.views.user_signup'),
+    url(r'user-login/','webfetchapp.views.user_login')
 ]

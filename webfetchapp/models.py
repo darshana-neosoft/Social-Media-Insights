@@ -1,9 +1,22 @@
 from __future__ import unicode_literals
 
 from django.db import models
-
+from django.contrib.auth.models import User
+from datetime import datetime
 # Create your models here.
 
+class customers(User):
+	customer_id = models.AutoField(primary_key=True)
+	customer_first_name = models.CharField(max_length=300)
+	customer_last_name = models.CharField(max_length=300)
+	mobile_number=models.CharField(max_length=50)
+	customer_email=models.CharField(max_length=100)
+	customer_password=models.CharField(max_length=200)
+	customer_created_by=models.CharField(max_length=300)
+	customer_created_date=models.DateTimeField(default=datetime.now())
+	def __unicode__(self):
+		return unicode(self.customer_first_name + ' ' + self.customer_last_name)
+		
 class tasks(models.Model):
 	task_id = models.IntegerField(max_length=10)
 	task_data = models.CharField(max_length=500)

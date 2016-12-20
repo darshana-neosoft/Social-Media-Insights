@@ -1,16 +1,20 @@
-from django.shortcuts import render
+from django.shortcuts import render,redirect,render_to_response
 from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from apiclient.discovery import build
 from apiclient.errors import HttpError
 from oauth2client.tools import argparser
 import datetime
+from django.template import RequestContext
 import pdb
+from django.db import IntegrityError
 from webfetchapp.models import *
 import uuid 
 # Create your views here.
+import MySQLdb
 import csv
-
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth import authenticate,login,logout
 from twython import Twython
 import json
 from facepy import GraphAPI
@@ -20,10 +24,79 @@ consumer_secret = 'U4JfeGcVtnMdASuawD0QWJKenrGCt9qHQZ4PXLiJqVqS5M2ONR'
 access_key = '2658755796-WmzvZae6XLGAd9zhaflkdPoyeIUX1kvaIOhMqBI'
 access_secret = 'OAoAFIIqeleJqrCJZ4zHkAWZpgz57bTV8pHkjZg2y78pL'
 
-
+@login_required(login_url='/')
 def home_page(request):
-	return render(request,'index.html')
+	user_name = request.session['login_user']
+	return render(request,'index.html',{'user_name':user_name})
 
+def show_login_page(request):
+	return render(request,'login.html')
+
+def signup_page(request):
+	return render(request,'signup.html')
+
+@csrf_exempt
+def user_login(request):
+	#pdb.set_trace()
+	if request.POST:
+		email = request.POST.get("email")
+		password = request.POST.get("password")
+		try:
+			user = authenticate(username=email,password=password)
+			if user is not None:
+				if user.is_active:
+					user_obj = customers.objects.get(customer_email = user.username)
+					request.session['login_user'] = user_obj.customer_first_name + " " + user_obj.customer_last_name
+					request.session['user_id'] = user_obj.customer_id
+					login(request,user)
+					return redirect('/home/')
+				else:
+					message = "User is not active"
+					return render_to_response('login.html',dict(message=message),context_instance=RequestContext(request))
+			else: 
+				message = 'Invalid Username or Password'
+				return render_to_response('login.html',dict(message=message),context_instance = RequestContext(request))
+		except User.DoesNotExist:
+			message = 'User Not Exit'
+		except MySQLdb.OperationalError, e:
+			message = 'Internal Server Error'
+		except Exception, e:
+			message = 'Internal Server Error'
+			return render_to_response('login.html', dict(message=message), context_instance=RequestContext(request))
+
+
+@csrf_exempt
+def user_signup(request):
+	if request.method == "POST":
+		try:
+			customer_obj = customers(
+			username  = request.POST.get("email"),
+			customer_first_name = request.POST.get("firstName"),
+			customer_last_name = request.POST.get("lastName"),
+			mobile_number = request.POST.get("mobileNumber"),
+			customer_email = request.POST.get("email"),
+			customer_created_by = request.POST.get("firstName")+request.POST.get("lastName"))
+			customer_obj.save()
+			customer_obj.set_password(request.POST.get("confpass"))
+			customer_obj.save()
+			data = {
+	            	'success': 'true',
+	            	'message': 'User Signed up successfully'
+	        	}
+		except IntegrityError, e:
+			data = {
+            	'success': 'false',
+            	'message': 'User already exist'
+        	}
+ 		except Exception, e:
+ 			data = {
+	            'success': 'false',
+	            'message': 'Sever Error'
+	        }
+    	return HttpResponse(json.dumps(data), content_type='application/json')
+
+		
+@login_required(login_url='/')
 @csrf_exempt
 def get_data(request):
 	#pdb.set_trace()
@@ -74,7 +147,7 @@ def get_twitter_data(from_date,to_date,keyword):
 	    count+=1
 	    twitter_obj = twitter_data(
 	    	request_id = request_id,
-			twitter_text  = tweet['text'],
+			twitter_text  = tweet['text'].encode('ascii', 'ignore'),
 			twitter_user_screen_name  = tweet['user']['screen_name'], 
 			twitter_favourite_count   = tweet['favorite_count'],
 			twitter_retwited_count    = tweet['retweet_count'],
@@ -184,7 +257,9 @@ def get_fb_data(from_date,to_date,keyword):
 	
 	for post in data:
 		for p in post['data']:
-	      #print "post===============",p
+	        #print "post===============",p
+			fb_message = ""
+			share_count = ""
 			for key in p:
 				#print "key=====",key
 				if 'shares' in key:
@@ -192,6 +267,8 @@ def get_fb_data(from_date,to_date,keyword):
 
 				if 'message' in key:
 					fb_message = str(p['message'].encode('ascii','ignore'))
+			
+
 					
 			fb_obj = facebook_data(
 			request_id = request_id,
@@ -240,7 +317,8 @@ def get_fb_comments(post_id,graph):
           	#print comment_count
     	return comment_count
 
-	
+
+@login_required(login_url='/')
 def show_post(request):
 	#pdb.set_trace()
 	request_id = request.GET.get('request_id')
@@ -329,6 +407,8 @@ def get_youtube_comment(youtube, video_id):
 		return 0
 
 
+
+@login_required(login_url='/')
 def show_video(request):
 	#pdb.set_trace()
 	request_id = request.GET.get('request_id')
@@ -351,6 +431,8 @@ def show_video(request):
 	return render(request,'show_youtube_data.html',data)
 
 
+
+@login_required(login_url='/')
 def show_youtube_comments(request):
 	vedio_id = request.GET.get("vedio_id")
 	comments_list=[]

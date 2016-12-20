@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+{% load static %}
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+	<title>Register</title>
+	
+	<!-- bootstrap -->
+	<link href="{% static 'css/bootstrap/bootstrap.css' %}" rel="stylesheet" />
+
+	<!-- libraries -->
+	<link href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css" rel="stylesheet">
+
+	<!-- global styles -->
+	<link rel="stylesheet" type="text/css" href="{% static 'css/compiled/layout.css' %}">
+	<link rel="stylesheet" type="text/css" href="{% static 'css/compiled/elements.css' %}">
+
+	<!-- this page specific styles -->
+
+	<!-- google font libraries -->
+	<link href='http://fonts.googleapis.com/css?family=Open+Sans:400,600,700,300|Titillium+Web:200,300,400' rel='stylesheet' type='text/css'>
+
+<style type="text/css">
+.span12{
+    -moz-box-shadow: 0 0 2px black;
+    -webkit-box-shadow: 0 0 2px black;
+    box-shadow: 0 0 2px black;
+}
+</style>
+	
+</head>
+<body id="login-page">
+
+<div class="container">
+		<div class="row">
+			<div class="col-xs-12">
+				<div id="login-box">
+					
+					<div class="row">
+						<div class="col-xs-12">
+							<div id="login-box-inner">
+								<!-- <img src="img/logo-login.png" alt="SuperheroAdmin" class="img-responsive" id="login-logo"/> -->
+								
+							<div id="login-logo" style="margin-top: 1px; margin-bottom: 30px; color:red;">
+									Social Media Insights
+								</div>			
+								
+								
+						<fieldset>
+							<legend>
+								Sign Up
+							</legend>
+							
+							<form id="signup">
+							 {% csrf_token %}
+							<div class="form-group">
+								<input autocomplete="off"  required type="text" class="form-control" name="firstName" id="firstName" placeholder="First Name" >
+
+							</div>
+							<div class="form-group">
+								<input autocomplete="off" required type="text" class="form-control" name="lastName" id="lastName" placeholder="Last Name" >
+
+							</div>
+							<div class="form-group">
+								<input autocomplete="off" required type="text" class="form-control" name="mobileNumber" id="mobileNumber" placeholder="Mobile No" maxlength="10">
+
+							</div>
+							
+							
+							
+							
+							<div class="form-group">
+								<span class="input-icon">
+									<input autocomplete="off" required type="email" class="form-control" name="email" id="email" placeholder="User ID (Email)" >
+									
+							</div>
+						
+							
+							<div class="form-group">
+								<span class="input-icon">
+							<input autocomplete="off" required type="password" name="password" id="password" class="form-control" placeholder="Password" pattern="^\S{6,}$" onchange="this.setCustomValidity(this.validity.patternMismatch ? 'Must have at least 6 characters' : ''); if(this.checkValidity()) form.passwordConfirm.pattern = this.value;">
+							</div>
+							
+							
+							<div class="form-group">
+								<span class="input-icon">
+							<input autocomplete="off" required name="confpass" type="password" class="form-control" id="passwordConfirm" placeholder="Password Again" pattern="^\S{6,}$" onchange="this.setCustomValidity(this.validity.patternMismatch ? 'Please enter the same Password as above' : '');" >
+							</div>
+
+
+							<div class="form-actions">
+								<p>
+									Already have an account?
+									<a href="/">
+										Log-in
+									</a>
+								</p>
+								<input type="submit" class="btn btn-success pull-right" value="Submit">
+									
+								</input>
+							</div>
+							</form>
+						</fieldset>
+					
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	
+	
+	
+	<!-- global scripts -->
+	<script src="{% static 'js/jquery.js' %}"></script>
+	<script src="{% static 'js/bootstrap.js' %}"></script>
+	
+	<!-- this page specific scripts -->
+
+	
+	<!-- theme scripts -->
+	<script src="{% static 'js/scripts.js' %}"></script>
+
+	<!-- this page specific inline scripts -->
+	<script type="text/javascript">
+	$("#signup").submit(function(e) 
+{
+		e.preventDefault();
+var formData = $(this).serialize();
+$.ajax({
+    			type : 'POST',
+    			url : '/user-signup/',
+    			data : formData,
+    			
+    			success: function(response) {
+    				console.log(response);
+        			if(response.success=='true'){
+                        alert(response.message);
+        			         window.location.href = '/'
+        	
+        			}
+        			if(response.success=='false'){
+        				alert(response.message);
+        			}
+    			},
+    			error: function(response){
+           			alert(response.message);
+                },
+		    })
+});
+	</script>
+</body>
+</html>
